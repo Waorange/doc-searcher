@@ -86,16 +86,26 @@ bool ParseConten(const std::string& file_text, std::string* content)
     //用于标记标签状态
     //如果为真表示当前处于标签内，如果为假表示当前处于内容中
     bool tag_flag = false;
-    for(const auto & ch : file_text)
+    size_t size = file_text.size();
+    size_t pos = file_text.find("</title>");
+    if(pos == std::string::npos)
+    {
+        pos = 0;
+    }
+    else
+    {
+        pos += strlen("</title>");
+    }
+    for(size_t i = pos; i < size; ++i)
     {
         if(!tag_flag)
         {
-            if(ch != '<'){
-                if(ch == '\n'){
+            if(file_text[i] != '<'){
+                if(file_text[i] == '\n'){
                     content->push_back(' ');
                 }
                 else{
-                    content->push_back(ch);
+                    content->push_back(file_text[i]);
                 }
             }
             else{
@@ -104,9 +114,8 @@ bool ParseConten(const std::string& file_text, std::string* content)
         }
         else
         {
-            if(ch == '>'){
+            if(file_text[i] == '>'){
                 tag_flag = false;
-                content->push_back(' ');
             }
         }
     }
