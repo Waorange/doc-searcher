@@ -3,8 +3,13 @@
 
 
 #include <cppjieba/Jieba.hpp>
+#include <jsoncpp/json/json.h>
+#include <string>
+#include <iostream>
+#include <vector>
+#include <unordered_map>
 
-namespace searchar
+namespace searcher
 {
 
 const char* const DICT_PATH = "../dict/jieba.dict.utf8";
@@ -36,6 +41,7 @@ typedef std::vector<Weigth> InvertedList;
 //用于构建索引
 class Index
 {
+public:
     Index()
         :jieba(DICT_PATH,
                 HMM_PATH,
@@ -44,14 +50,23 @@ class Index
                 STOP_WORD_PATH)
     {}
     //构建正排索引和倒排索引
-    bool Build();
+    bool Build(const std::string & input_path);
 
     //通过文件编号查正排索引获取文件
     DocInfo * GetDocInfo(uint64_t doc_id);
+    
     //通过词查倒排索引获取倒排拉链
     InvertedList * GetInvertedList(const std::string & word);
+    
+    //分词
+    void CutWord(const std::string & str, \
+            std::vector<std::string> * words);
+private:
+    const DocInfo *BuildForword(const std::string &line);
+    void BuildInverted(const DocInfo * doc_info);
 
 private:
+
     //正排索引 通过文件编号获取文件内容
     std::vector<DocInfo> forword_index_;
     
@@ -60,6 +75,31 @@ private:
     
     //结巴分词，用于分词
     cppjieba::Jieba jieba;
+};
+
+class Searcher
+{
+public:
+    Searcher()
+        :index_(new Index)
+    {}
+    ~Searcher()
+    {
+        if(index_ != nullptr){
+            delete index_;
+        }
+    }
+    //初始化Index对象构造索引
+    bool Init(const std::string & file_path);
+    
+    //通过关键词进行查询
+    bool Search(const std::string & query, std::string * result);
+private:
+    const std::string ProduceDesc(const std::string & keyword, 
+          const std::string & content);
+
+private:
+    Index * index_;
 };
 
 
