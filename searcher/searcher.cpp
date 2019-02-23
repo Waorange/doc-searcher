@@ -1,6 +1,7 @@
 #include "searcher.h"
 #include "../common/util.hpp"
 #include <fstream>
+#include <set>
 #include <string>
 #include <iostream>
 #include <unordered_map>
@@ -8,6 +9,11 @@
 
 namespace searcher
 {
+
+    static const std::set<std::string> space_punc = {
+        " ", ",", ":", ";", "\"", "\'", "!", "&", "|", "#", "="
+        , "-", "%", "@", "(", ")", "[", "]", "{", "}" 
+    };
     //构建正排索引和倒排索引
     bool Index::Build(const std::string & input_path)
     {
@@ -58,6 +64,15 @@ namespace searcher
         return &forword_index_.back();
     }
     
+    static bool IsSpaceOrPunc(const std::string & word)
+    {
+        if(space_punc.find(word) != space_punc.end())
+        {
+            return true;
+        }
+        return false;
+    }
+
     void Index::BuildInverted(const DocInfo *doc_info)
     {
         //对返回的文件进行分词
@@ -79,7 +94,8 @@ namespace searcher
         {
             //将所有的词转换为小写
             boost::to_lower(word);
-            if(word == " ")
+            //去除空白字符和标点符号等
+            if(IsSpaceOrPunc(word))
             {
                 continue;
             }
@@ -89,7 +105,7 @@ namespace searcher
         {
             //将所有的词转换为小写
             boost::to_lower(word);
-            if(word == " ")
+            if(IsSpaceOrPunc(word))
             {
                 continue;
             }
@@ -171,7 +187,7 @@ namespace searcher
             {
                 continue;
             }
-            std::cout << "开始查找: "<< keyword<<std::endl;
+            std::cout << "开始查找: "<< keyword <<std::endl;
             InvertedList * invertedlist = index_->GetInvertedList(keyword);
             if(invertedlist == nullptr){
                 continue;
@@ -183,7 +199,7 @@ namespace searcher
 //          {
 //              std::cout << it.doc_id << " ";
 //          }
-            std::cout << std::endl;
+//          std::cout << std::endl;
 //          all_token_result.insert(all_token_result.end(),
 //                  invertedlist->begin(), invertedlist->end());
         }
