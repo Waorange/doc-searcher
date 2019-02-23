@@ -14,7 +14,7 @@ int main()
     std::string results;
 //    search.Search("Postconditions filesystem location", &results);
 
-    search.Search(" , ; : [ ]", &results);
+    search.Search("EventBufferEvent", &results);
     
     std::cout << results << std::endl;
    
