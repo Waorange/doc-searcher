@@ -32,6 +32,7 @@ namespace searcher
                 std::cout << "Build finish: " << count <<std::endl;
             }   
         }
+        return true;
     }
 
 
@@ -78,12 +79,20 @@ namespace searcher
         {
             //将所有的词转换为小写
             boost::to_lower(word);
+            if(word == " ")
+            {
+                continue;
+            }
             ++word_cnt[word].title_cnt;
         }
         for(auto & word : content_tokens)
         {
             //将所有的词转换为小写
             boost::to_lower(word);
+            if(word == " ")
+            {
+                continue;
+            }
             ++word_cnt[word].content_cnt;
         }
         
@@ -158,22 +167,37 @@ namespace searcher
         for(std::string & keyword : keywords)
         {
             boost::to_lower(keyword);
+            if(keyword == " ")
+            {
+                continue;
+            }
             std::cout << "开始查找: "<< keyword<<std::endl;
             InvertedList * invertedlist = index_->GetInvertedList(keyword);
             if(invertedlist == nullptr){
                 continue;
             }
             //将获取的倒拉链结果统一放到all_token_result中
-            
-            all_token_result.insert(all_token_result.end(),
-                    invertedlist->begin(), invertedlist->end());
+            MergeInvertedList(*invertedlist, all_token_result);
+//          std::cout << "合并后" <<std::endl;
+//          for(auto it : all_token_result)
+//          {
+//              std::cout << it.doc_id << " ";
+//          }
+            std::cout << std::endl;
+//          all_token_result.insert(all_token_result.end(),
+//                  invertedlist->begin(), invertedlist->end());
         }
+        
 
         //对返回的结果按照一定规律进行排序
-        std::sort(all_token_result.begin(), all_token_result.end(),
-                [](const Weigth & w1, const Weigth & w2)
+//      std::sort(all_token_result.begin(), all_token_result.end(),
+//              [](const Weigth & w1, const Weigth & w2)
+//              {
+//                  return w1.weigth > w2.weigth;
+//              });
+        all_token_result.sort([](const Weigth & w1, const Weigth &w2)
                 {
-                    return w1.weigth > w2.weigth;
+                    return w1.weigth > w2.weigth; 
                 });
         //将总的拉链构造成JSON对象返回
         Json::Value results;  //表示所有搜索结果的JSON对象
@@ -185,9 +209,10 @@ namespace searcher
                 std::cout << "Index error" << std::endl;
                 return false;
             }
-            std::cout << doc_info->title << std::endl;
-            std::cout << ProduceDesc(weigth.word, doc_info->content) <<std::endl;
-            std::cout << doc_info->url << std::endl;
+//          std::cout << doc_info->title << std::endl;
+//          std::cout << ProduceDesc(weigth.word, doc_info->content) <<std::endl;
+//          std::cout << doc_info->url << std::endl;
+
             Json::Value result; //表示一个结果的JSON对象
             result["title"] = doc_info->title;
             result["desc"] = ProduceDesc(weigth.word, doc_info->content);
@@ -229,5 +254,53 @@ namespace searcher
             return content.substr(beg, 100) + "...";
         }
         return content;    
+    }
+    void Searcher::MergeInvertedList(const InvertedList & invertedlist 
+           , InvertedList & all_token_result)
+    { 
+//      std::cout << "合并前" <<std::endl;
+//      for(auto it : invertedlist)
+//      {
+//          std::cout << it.doc_id << " ";
+//      }
+//      std::cout << std::endl;
+//      for(auto it : all_token_result)
+//      {
+//          std::cout << it.doc_id << " ";
+//      }
+        std::cout << std::endl;
+        //合并有序链表因为文档是有序生成的
+        //所以倒排拉链中的序号本来就是有序的
+        auto inverl = invertedlist.begin();
+        auto result = all_token_result.begin();
+        auto endinv = invertedlist.end();
+        auto endres = all_token_result.end();
+        while(inverl != endinv && result != endres)
+        {
+            if(inverl->doc_id < result->doc_id)
+            {
+                all_token_result.insert(result, *inverl);
+                ++inverl;
+            }
+            else if(inverl->doc_id == result->doc_id)
+            {
+                //当需要查找的不同关键词在同一个文档中出现
+                //提升其搜索权值
+                result->weigth = 3 * (result->weigth + inverl->weigth);
+                ++inverl;
+            }
+            else
+            {
+                ++result;
+            }
+        }
+        if(inverl == endinv)
+        {
+            return;
+        }
+        else
+        {
+            all_token_result.insert(result, inverl, endinv);
+        }   
     }
 }

@@ -12,9 +12,10 @@ int main()
     }
 
     std::string results;
-    search.Search("filesystem", &results);
+    search.Search("Postconditions filesystem location", &results);
+
     
-    std::cout << results << std::endl;
+//    std::cout << results << std::endl;
    
   
     return 0;

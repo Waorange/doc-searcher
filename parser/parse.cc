@@ -86,6 +86,10 @@ bool ParseConten(const std::string& file_text, std::string* content)
     //用于标记标签状态
     //如果为真表示当前处于标签内，如果为假表示当前处于内容中
     bool tag_flag = false;
+    //空白标记删除连续的非显示字符
+    bool space_flag = false;
+    //表示该行有没有数据插入
+    bool insert_flag = false;
     size_t size = file_text.size();
     size_t pos = file_text.find("</title>");
     if(pos == std::string::npos)
@@ -101,12 +105,31 @@ bool ParseConten(const std::string& file_text, std::string* content)
         if(!tag_flag)
         {
             if(file_text[i] != '<'){
-                if(file_text[i] == '\n'){
+                if(insert_flag && file_text[i] == '\n'){
                     content->push_back(' ');
+                    insert_flag = false;
+
                 }
                 else{
-                    content->push_back(file_text[i]);
+                    //如果没有处在空白字符中,则直接插入
+                    if(!space_flag){
+                        if(file_text[i] > 32){
+                            content->push_back(file_text[i]);
+                            insert_flag = true;
+                        }
+                        else{
+                            space_flag = true;
+                        }
+                    }
+                    else {
+                        if(file_text[i] > 32){
+                            content->push_back(' ');
+                            space_flag = false;
+                        }
+                    }
+                    
                 }
+                
             }
             else{
                 tag_flag = true;

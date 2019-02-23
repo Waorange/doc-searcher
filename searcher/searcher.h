@@ -7,6 +7,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <list>
 #include <unordered_map>
 
 namespace searcher
@@ -36,7 +37,7 @@ struct DocInfo{
     std::string url;
 };
 
-typedef std::vector<Weigth> InvertedList;
+typedef std::list<Weigth> InvertedList;
 
 //用于构建索引
 class Index
@@ -94,9 +95,14 @@ public:
     
     //通过关键词进行查询
     bool Search(const std::string & query, std::string * result);
-private:
-    const std::string ProduceDesc(const std::string & keyword, 
+
+    //生成文章关于搜索内容的摘要
+    static const std::string ProduceDesc(const std::string & keyword, 
           const std::string & content);
+    
+    //用于合并搜索出的倒排拉链
+    static void MergeInvertedList(const InvertedList & invertedlist 
+           ,InvertedList &  all_token_result);
 
 private:
     Index * index_;
